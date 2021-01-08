@@ -1,0 +1,55 @@
+version: "3"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel/php-fpm
+    container_name: app
+    tty: true
+    restart: unless-stopped
+    environment: 
+      DB_HOST: db
+      DB_DATABASE: laravel
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    volumes: 
+      - ./:/var/www
+      - ./config/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile_Nginx
+    image: laravel/nginx
+    container_name: web
+    restart: unless-stopped
+    ports: 
+      - "8080:80"
+    volumes: 
+      - ./:/var/www
+      - ./config/nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on: 
+      - app
+
+  db:
+    image: mysql:latest
+    container_name: db
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links: 
+        - db:db
+    ports:
+        - 8000:80
+    environment:
+        MYSQL_ROOT_PASSWORD: root
+
+volumes: 
+  dbdata:
+    driver: local
